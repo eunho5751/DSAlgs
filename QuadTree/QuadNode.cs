@@ -128,12 +128,26 @@ public class QuadNode<T> where T : IQuadPoint
         if (Quadrant == flippedQuadrant1)
         {
             var child = Parent.GetChild(quadrant1);
-            neighbors.Add(child);
+            if (child.IsLeaf)
+            {
+                neighbors.Add(child);
+            }
+            else
+            {
+                GetDeepestNodes(neighbors, child, flippedQuadrant1, flippedQuadrant2);
+            }
         }
         else if (Quadrant == flippedQuadrant2)
         {
             var child = Parent.GetChild(quadrant2);
-            neighbors.Add(child);
+            if (child.IsLeaf)
+            {
+                neighbors.Add(child);
+            }
+            else
+            {
+                GetDeepestNodes(neighbors, child, flippedQuadrant1, flippedQuadrant2);
+            }
         }
         else
         {
