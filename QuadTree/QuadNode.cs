@@ -1,23 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 
-public class QuadNode<T> where T : IQuadPoint
+public abstract class QuadNode<TNode, TPoint> where TNode : QuadNode<TNode, TPoint> where TPoint : IQuadPoint
 {
-    private readonly QuadNode<T>[] _children;
-    private readonly List<T> _points;
-    private readonly List<QuadNode<T>> _neighbors;
+    private readonly TNode[] _children;
+    private readonly List<TPoint> _points;
+    private readonly List<TNode> _neighbors;
 
-    public QuadNode(QuadTree<T> tree, QuadNode<T> parent, QuadRegion region, Quadrant quadrant, int depth)
+    public QuadNode(QuadTree<TNode, TPoint> tree, TNode parent, QuadRegion region)
     {
-        _children = new QuadNode<T>[4];
-        _points = new List<T>();
-        _neighbors = new List<QuadNode<T>>();
-
+        _children = new TNode[4];
+        _points = new List<TPoint>();
+        _neighbors = new List<TNode>();
+        
         Tree = tree;
         Parent = parent;
         Region = region;
-        Quadrant = quadrant;
-        Depth = depth;
+        Quadrant = CalcQuadrant();
+        Depth = parent != null ? parent.Depth + 1 : 0;
     }
 
     public void Update()
@@ -32,7 +32,7 @@ public class QuadNode<T> where T : IQuadPoint
         SearchNeighbors(_neighbors, Quadrant.NE, Quadrant.SE, false);
     }
 
-    public QuadNode<T> GetChild(Quadrant quadrant)
+    public TNode GetChild(Quadrant quadrant)
     {
         return quadrant switch
         {
@@ -44,13 +44,13 @@ public class QuadNode<T> where T : IQuadPoint
         };
     }
 
-    public QuadNode<T> GetNode(float x, float y)
+    public TNode GetNode(float x, float y)
     {
         if (InRegion(x, y))
         {
             if (IsLeaf)
             {
-                return this;
+                return (TNode)this;
             }
             else
             {
@@ -74,7 +74,7 @@ public class QuadNode<T> where T : IQuadPoint
         return Region.Contains(x, y);
     }
 
-    public void Insert(T point)
+    public void Insert(TPoint point)
     {
         if (!point.InRegion(Region))
             return;
@@ -86,7 +86,7 @@ public class QuadNode<T> where T : IQuadPoint
             {
                 Subdivide();
 
-                foreach (T p in _points)
+                foreach (TPoint p in _points)
                 {
                     InsertInChild(p);
                 }
@@ -99,7 +99,7 @@ public class QuadNode<T> where T : IQuadPoint
         }
     }
 
-    private void InsertInChild(T point)
+    private void InsertInChild(TPoint point)
     {
         foreach (var child in _children)
         {
@@ -114,13 +114,13 @@ public class QuadNode<T> where T : IQuadPoint
         float halfW = Region.Width / 2f;
         float halfH = Region.Height / 2f;
 
-        _children[0] = new QuadNode<T>(Tree, this, new QuadRegion(x, y, halfW, halfH), Quadrant.SW, Depth + 1);
-        _children[1] = new QuadNode<T>(Tree, this, new QuadRegion(x + halfW, y, halfW, halfH), Quadrant.SE, Depth + 1);
-        _children[2] = new QuadNode<T>(Tree, this, new QuadRegion(x + halfW, y + halfH, halfW, halfH), Quadrant.NE, Depth + 1);
-        _children[3] = new QuadNode<T>(Tree, this, new QuadRegion(x, y + halfH, halfW, halfH), Quadrant.NW, Depth + 1);
+        _children[0] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(x, y, halfW, halfH));
+        _children[1] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(x + halfW, y, halfW, halfH));
+        _children[2] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(x + halfW, y + halfH, halfW, halfH));
+        _children[3] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(x, y + halfH, halfW, halfH));
     }
 
-    private void SearchNeighbors(List<QuadNode<T>> neighbors, Quadrant quadrant1, Quadrant quadrant2, bool vertical)
+    private void SearchNeighbors(List<TNode> neighbors, Quadrant quadrant1, Quadrant quadrant2, bool vertical)
     {
         Quadrant flippedQuadrant1 = vertical ? FlipQuadarantVertically(quadrant1) : FlipQuadrantHorizontally(quadrant1);
         Quadrant flippedQuadrant2 = vertical ? FlipQuadarantVertically(quadrant2) : FlipQuadrantHorizontally(quadrant2);
@@ -165,7 +165,7 @@ public class QuadNode<T> where T : IQuadPoint
 
             if (cur != Tree.Root)
             {
-                QuadNode<T> child = cur.Parent;
+                TNode child = cur.Parent;
                 while (backTracker.Count > 0)
                 {
                     Quadrant quadrant = backTracker.Pop();
@@ -188,7 +188,7 @@ public class QuadNode<T> where T : IQuadPoint
         }
     }
 
-    private void GetDeepestNodes(List<QuadNode<T>> ret, QuadNode<T> node, Quadrant quadrant1, Quadrant quadrant2)
+    private void GetDeepestNodes(List<TNode> ret, TNode node, Quadrant quadrant1, Quadrant quadrant2)
     {
         var child1 = node.GetChild(quadrant1);
         if (child1.IsLeaf)
@@ -233,9 +233,31 @@ public class QuadNode<T> where T : IQuadPoint
         };
     }
 
-    public QuadTree<T> Tree { get; }
+    private Quadrant CalcQuadrant()
+    {
+        if (Parent != null)
+        {
+            float pcx = Parent.Region.X + Parent.Region.Width / 2f;
+            float pcy = Parent.Region.Y + Parent.Region.Height / 2f;
 
-    public QuadNode<T> Parent { get; }
+            float cx = Region.X + Region.Width / 2f;
+            float cy = Region.Y + Region.Height / 2f;
+
+            if (cx < pcx && cy < pcy) return Quadrant.SW;
+            else if (cx > pcx && cy < pcy) return Quadrant.SE;
+            else if (cx > pcx && cy > pcy) return Quadrant.NE;
+            else if (cx < pcx && cy > pcy) return Quadrant.NW;
+            else return Quadrant.None;
+        }
+        else
+        {
+            return Quadrant.None;
+        }
+    }
+
+    public QuadTree<TNode, TPoint> Tree { get; }
+
+    public TNode Parent { get; }
 
     public QuadRegion Region { get; }
 
@@ -245,7 +267,11 @@ public class QuadNode<T> where T : IQuadPoint
 
     public bool IsLeaf => _children[0] == null;
 
-    public IEnumerable<QuadNode<T>> Children => _children;
+    public bool HasPoints => _points.Count > 0;
 
-    public IEnumerable<QuadNode<T>> Neighbors => _neighbors;
+    public IEnumerable<TNode> Children => _children;
+
+    public IEnumerable<TNode> Neighbors => _neighbors;
+
+    public IReadOnlyCollection<TPoint> Points => _points;
 }
