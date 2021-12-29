@@ -40,9 +40,9 @@ public class QuadTree<TNode, TPoint> where TNode : QuadNode<TNode, TPoint> where
         Root.Insert(point);
     }
 
-    public TNode GetNode(float x, float y)
+    public TNode GetNode(Point2 position)
     {
-        return Root.GetNode(x, y);
+        return Root.GetNode(position);
     }
 
     public TNode CreateNode(QuadTree<TNode, TPoint> tree, TNode parent, QuadRegion region)

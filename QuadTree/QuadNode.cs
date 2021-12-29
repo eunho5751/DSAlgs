@@ -44,9 +44,9 @@ public abstract class QuadNode<TNode, TPoint> where TNode : QuadNode<TNode, TPoi
         };
     }
 
-    public TNode GetNode(float x, float y)
+    public TNode GetNode(Point2 position)
     {
-        if (InRegion(x, y))
+        if (InRegion(position))
         {
             if (IsLeaf)
             {
@@ -56,9 +56,9 @@ public abstract class QuadNode<TNode, TPoint> where TNode : QuadNode<TNode, TPoi
             {
                 foreach (var child in _children)
                 {
-                    if (child.InRegion(x, y))
+                    if (child.InRegion(position))
                     {
-                        return child.GetNode(x, y);
+                        return child.GetNode(position);
                     }
                 }
 
@@ -69,9 +69,9 @@ public abstract class QuadNode<TNode, TPoint> where TNode : QuadNode<TNode, TPoi
         return null;
     }
 
-    public bool InRegion(float x, float y)
+    public bool InRegion(Point2 position)
     {
-        return Region.Contains(x, y);
+        return Region.Contains(position);
     }
 
     public void Insert(TPoint point)
@@ -109,15 +109,14 @@ public abstract class QuadNode<TNode, TPoint> where TNode : QuadNode<TNode, TPoi
 
     private void Subdivide()
     {
-        float x = Region.X;
-        float y = Region.Y;
+        Point2 position = Region.Position;
         float halfW = Region.Width / 2f;
         float halfH = Region.Height / 2f;
-
-        _children[0] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(x, y, halfW, halfH));
-        _children[1] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(x + halfW, y, halfW, halfH));
-        _children[2] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(x + halfW, y + halfH, halfW, halfH));
-        _children[3] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(x, y + halfH, halfW, halfH));
+        
+        _children[0] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(position, halfW, halfH));
+        _children[1] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(new Point2(position.X + halfW, position.Y), halfW, halfH));
+        _children[2] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(new Point2(position.X + halfW, position.Y + halfH), halfW, halfH));
+        _children[3] = Tree.CreateNode(Tree, (TNode)this, new QuadRegion(new Point2(position.X, position.Y + halfH), halfW, halfH));
     }
 
     private void SearchNeighbors(List<TNode> neighbors, Quadrant quadrant1, Quadrant quadrant2, bool vertical)
@@ -237,11 +236,13 @@ public abstract class QuadNode<TNode, TPoint> where TNode : QuadNode<TNode, TPoi
     {
         if (Parent != null)
         {
-            float pcx = Parent.Region.X + Parent.Region.Width / 2f;
-            float pcy = Parent.Region.Y + Parent.Region.Height / 2f;
+            Point2 parentPos = Parent.Region.Position;
+            float pcx = parentPos.X + Parent.Region.Width / 2f;
+            float pcy = parentPos.Y + Parent.Region.Height / 2f;
 
-            float cx = Region.X + Region.Width / 2f;
-            float cy = Region.Y + Region.Height / 2f;
+            Point2 myPos = Region.Position;
+            float cx = myPos.X + Region.Width / 2f;
+            float cy = myPos.Y + Region.Height / 2f;
 
             if (cx < pcx && cy < pcy) return Quadrant.SW;
             else if (cx > pcx && cy < pcy) return Quadrant.SE;

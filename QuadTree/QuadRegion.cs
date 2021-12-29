@@ -1,26 +1,24 @@
 ﻿
 public struct QuadRegion
 {
-    public QuadRegion(float x, float y, float width, float height)
+    public QuadRegion(Point2 position, float width, float height)
     {
-        X = x;
-        Y = y;
+        Position = position;
         Width = width;
         Height = height;
     }
 
-    public bool Contains(float x, float y)
+    public bool Contains(Point2 position)
     {
-        return x >= X && x <= (X + Width) && y >= Y && y <= (Y + Height);
+        return position.X >= Position.X && position.X <= (Position.X + Width) && position.Y >= Position.Y && position.Y <= (Position.Y + Height);
     }
 
     public override string ToString()
     {
-        return $"X : {X}, Y : {Y}, Width : {Width}, Height : {Height}";
+        return $"X : {Position.X}, Y : {Position.Y}, Width : {Width}, Height : {Height}";
     }
 
-    public float X { get; set; }
-    public float Y { get; set; }
+    public Point2 Position { get; set; }
     public float Width { get; set; }
     public float Height { get; set; }
 }
