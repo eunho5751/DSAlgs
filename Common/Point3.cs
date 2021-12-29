@@ -15,6 +15,9 @@ public struct Point3
     public static Point3 operator+(Point3 lhs, Point3 rhs) => new Point3(lhs.X + rhs.X, lhs.Y + rhs.Y, lhs.Z + rhs.Z);
     public static Point3 operator-(Point3 lhs, Point3 rhs) => new Point3(lhs.X - rhs.X, lhs.Y - rhs.Y, lhs.Z - rhs.Z);
 
+    public static float Dot(Point3 lhs, Point3 rhs) => lhs.X * rhs.X + lhs.Y * rhs.Y + lhs.Z * rhs.Z;
+    public static Point3 Cross(Point3 lhs, Point3 rhs) => new Point3(lhs.Y * rhs.Z - lhs.Z * rhs.Y, lhs.Z * rhs.X - lhs.X * rhs.Z, lhs.X * rhs.Y - lhs.Y * rhs.X);
+
     public override string ToString() => $"({X}, {Y}, {Z})";
 
     public float X { get; set; }

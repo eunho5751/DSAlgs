@@ -14,6 +14,9 @@ public struct Point2
     public static Point2 operator+(Point2 lhs, Point2 rhs) => new Point2(lhs.X + rhs.X, lhs.Y + rhs.Y);
     public static Point2 operator-(Point2 lhs, Point2 rhs) => new Point2(lhs.X - rhs.X, lhs.Y - rhs.Y);
 
+    public static float Dot(Point2 lhs, Point2 rhs) => lhs.X * rhs.X + lhs.Y * rhs.Y;
+    public static float Cross(Point2 lhs, Point2 rhs) => lhs.X * rhs.Y - lhs.Y * rhs.X;
+
     public override string ToString() => $"({X}, {Y})";
 
     public float X { get; set; }
